@@ -1,0 +1,250 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Map.gdshader" type="Shader" id=1]
+
+[sub_resource type="GDScript" id=3]
+script/source = "extends Control
+
+class NoiseObject:
+	var seed_nr:int
+	var octaves:int
+	var period:float
+	var initial_period:float
+	var persistence:float
+	var lacunarity:float
+	
+	func _init(seed_nr:int,octaves:int,period:float,persistence:float,lacunarity:float):
+		self.seed_nr=seed_nr
+		self.octaves=octaves
+		self.period=period
+		self.initial_period=period
+		self.persistence=persistence
+		self.lacunarity=lacunarity
+		
+
+var mainElevationTex:NoiseTexture
+var elevationTex:NoiseTexture
+var moistureTex:NoiseTexture
+var heatTex:NoiseTexture
+var colormap:GradientTexture
+
+var mainElevationNoise:NoiseObject
+var elevationNoise:NoiseObject
+var moistureNoise:NoiseObject
+var heatNoise:NoiseObject
+
+var zoom:float=1.0 setget set_zoom, get_zoom
+var world_offset:Vector2=Vector2()
+var camera_size:Vector2=Vector2(128,128)
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	init_all_textures()
+	update_position()
+	update_position()
+
+func init_all_textures():
+	var material=$ColorRect.get_material()
+	
+	self.mainElevationNoise=NoiseObject.new(0,1,360,1,1)
+	self.mainElevationTex=init_texture(self.mainElevationNoise)
+	material.set_shader_param(\"MAIN_ELEVATION_MAP\",self.mainElevationTex)
+	
+	self.elevationNoise=NoiseObject.new(0,6,60,0.5,3.1)
+	self.elevationTex=init_texture(self.elevationNoise)
+	material.set_shader_param(\"ELEVATION_MAP\",self.elevationTex)
+	
+	self.moistureNoise=NoiseObject.new(1,2,64,3,0.4)
+	self.moistureTex=init_texture(self.moistureNoise)
+	material.set_shader_param(\"MOISTURE_MAP\",self.moistureTex)
+	
+	self.heatNoise=NoiseObject.new(2,2,64,3,0.4)
+	self.heatTex=init_texture(self.heatNoise)
+	material.set_shader_param(\"HEAT_MAP\",self.heatTex)
+	
+	self.colormap=createColorMap()
+	material.set_shader_param(\"COLOR_MAP\",self.colormap)
+	material.set_shader_param(\"color_map_offsets\",self.colormap.gradient.offsets)
+
+func init_texture(noiseObj:NoiseObject):
+	var noise=OpenSimplexNoise.new()
+	noise.seed=noiseObj.seed_nr
+	noise.octaves=noiseObj.octaves
+	noise.period=noiseObj.period
+	noise.persistence=noiseObj.persistence
+	noise.lacunarity=noiseObj.lacunarity
+	
+	var tex=NoiseTexture.new()
+	tex.noise=noise
+	tex.width=camera_size.x
+	tex.height=camera_size.y
+	tex.flags=Texture.FLAG_MIPMAPS  + Texture.FLAG_FILTER
+	
+	return tex
+
+func createColorMap() -> GradientTexture:
+	
+	var gradient=Gradient.new()
+	gradient.set_color(0, Color(0,0,0.5))  # deep water
+	gradient.add_point(0.1, Color(25/255.0,25/255.0,150/255.0))  # shallow water
+	gradient.add_point(0.2, Color(240/255.0,240/255.0,64/255.0))  # sand
+	gradient.add_point(0.25, Color(238/255.0,218/255.0,130/255.0))  # desert
+	gradient.add_point(0.3, Color(50/255.0,220/255.0,20/255.0))  # grass
+	gradient.add_point(0.35, Color(177/255.0,209/255.0,110/255.0))  # savanna
+	gradient.add_point(0.4, Color(16/255.0,160/255.0, 0))  # forest
+	gradient.add_point(0.45, Color(73/255.0,100/255.0, 35/255.0))  # seasonal forest
+	gradient.add_point(0.5, Color(95/255.0,115/255.0, 62/255.0))  # boreal forest
+	gradient.add_point(0.55, Color(29/255.0,73/255.0, 40/255.0))  # rainforest
+	gradient.add_point(0.6, Color(0.5,0.5,0.5))  # rock
+	gradient.add_point(0.65, Color(96/255.0,131/255.0,112/255.0))  # tundra
+	gradient.add_point(0.7, Color(1,1,1))  # snow
+	
+	var colorMap=GradientTexture.new()
+	colorMap.width=64
+	colorMap.gradient=gradient
+	colorMap.flags=4
+	return colorMap
+
+func update_labels():
+	$sidebar/OctaveLabel.text=\"Octave : \"+str(elevationNoise.octaves)
+	$sidebar/ZoomLabel.text=\"Zoom : \"+str(zoom)
+	
+	$sidebar/XLabel.text=\"X : \"+str(world_offset.x/zoom)
+	$sidebar/YLabel.text=\"Y : \"+str(world_offset.y/zoom)
+	$sidebar/WorldXLabel.text=\"World X : \"+str(world_offset.x)
+	$sidebar/WorldYLabel.text=\"World Y : \"+str(world_offset.y)
+
+func update_position():
+	self.mainElevationTex.noise_offset=world_offset*zoom-camera_size/2
+	self.elevationTex.noise_offset=world_offset*zoom-camera_size/2
+	self.moistureTex.noise_offset=world_offset*zoom-camera_size/2
+	self.heatTex.noise_offset=world_offset*zoom-camera_size/2
+	
+	update_labels()
+
+func set_zoom(new_value):
+	# pass
+	zoom=new_value
+
+func get_zoom():
+	return zoom
+
+func update_noise(noiseObj:NoiseObject,noiseTex:NoiseTexture):
+	noiseObj.period=noiseObj.initial_period*zoom
+	noiseTex.noise.period=noiseObj.period
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	var speed=40*delta
+	
+	var movement=Vector2()
+	if Input.is_action_pressed(\"ui_left\"):
+		movement.x+=-speed
+	if Input.is_action_pressed(\"ui_right\"):
+		movement.x+=speed
+	if Input.is_action_pressed(\"ui_up\"):
+		movement.y+=-speed
+	if Input.is_action_pressed(\"ui_down\"):
+		movement.y+=speed
+
+	if movement.length()>0:
+		world_offset+=movement/zoom
+		update_position()
+
+	if Input.is_action_just_pressed(\"octave_plus\"):
+		elevationNoise.octaves+=1
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_labels()
+	if Input.is_action_just_pressed(\"octave_minus\"):
+		elevationNoise.octaves-=1
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_labels()
+	if Input.is_action_just_pressed(\"lacunarity_plus\"):
+		elevationNoise.lacunarity+=0.1
+		elevationTex.noise.lacunarity=elevationNoise.lacunarity
+	if Input.is_action_just_pressed(\"lacunarity_minus\"):
+		elevationNoise.lacunarity-=0.1
+		elevationTex.noise.lacunarity=elevationNoise.lacunarity
+	if Input.is_action_pressed(\"periode_plus\"):
+		zoom+=0.01
+		update_noise(elevationNoise,elevationTex)
+		update_noise(mainElevationNoise,mainElevationTex)
+		update_noise(moistureNoise,moistureTex)
+		update_noise(heatNoise,heatTex)
+		update_position()
+	if Input.is_action_pressed(\"periode_minus\"):
+		zoom-=0.01
+		update_noise(elevationNoise,elevationTex)
+		update_noise(mainElevationNoise,mainElevationTex)
+		update_noise(moistureNoise,moistureTex)
+		update_noise(heatNoise,heatTex)
+		update_position()
+"
+
+[sub_resource type="Gradient" id=4]
+offsets = PoolRealArray( 0, 0.5, 1 )
+colors = PoolColorArray( 0.278431, 0.231373, 0.470588, 1, 0.298039, 0.490196, 0.611765, 1, 0.341176, 1, 0.894118, 1 )
+
+[sub_resource type="GradientTexture" id=5]
+gradient = SubResource( 4 )
+width = 64
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = ExtResource( 1 )
+shader_param/color_map_offsets_n = 0
+shader_param/heat_map_minmax = Vector2( 0, 1 )
+shader_param/moisture_map_minmax = Vector2( 0, 1 )
+shader_param/WATER_MAP = SubResource( 5 )
+
+[node name="Main" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -181.0
+script = SubResource( 3 )
+
+[node name="ColorRect" type="ColorRect" parent="."]
+material = SubResource( 2 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -1.0
+
+[node name="sidebar" type="VBoxContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = 180.0
+
+[node name="OctaveLabel" type="Label" parent="sidebar"]
+margin_right = 180.0
+margin_bottom = 14.0
+text = "Octave : 4"
+
+[node name="ZoomLabel" type="Label" parent="sidebar"]
+margin_top = 18.0
+margin_right = 180.0
+margin_bottom = 32.0
+text = "Zoom : 1"
+
+[node name="XLabel" type="Label" parent="sidebar"]
+margin_top = 36.0
+margin_right = 180.0
+margin_bottom = 50.0
+text = "X : 0"
+
+[node name="YLabel" type="Label" parent="sidebar"]
+margin_top = 54.0
+margin_right = 180.0
+margin_bottom = 68.0
+text = "Y : 0"
+
+[node name="WorldXLabel" type="Label" parent="sidebar"]
+margin_top = 72.0
+margin_right = 180.0
+margin_bottom = 86.0
+text = "World X : 0"
+
+[node name="WorldYLabel" type="Label" parent="sidebar"]
+margin_top = 90.0
+margin_right = 180.0
+margin_bottom = 104.0
+text = "World Y : 0"
