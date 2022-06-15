@@ -143,9 +143,5 @@ void fragment(){
 		COLOR = texture(COLOR_MAP, vec2(finalHeight, 0));
 	}
 	
-	if(abs(0.25-finalHeight)<0.05){
-		COLOR=vec4(0f,0f,0f,1f);
-	} 
-	
 	//COLOR = vec4(finalHeight,0.0f,0.0f,1f);
 }

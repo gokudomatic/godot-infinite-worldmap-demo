@@ -12,7 +12,7 @@ _global_script_classes=[ {
 "base": "Node",
 "class": "BiomeGenerator",
 "language": "GDScript",
-"path": "res://biome_generator.gd"
+"path": "res://gdscript-demo/biome_generator.gd"
 } ]
 _global_script_class_icons={
 "BiomeGenerator": ""
