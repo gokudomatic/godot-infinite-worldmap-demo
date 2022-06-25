@@ -21,7 +21,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Texture Noise"
-run/main_scene="res://Main_2.tscn"
+run/main_scene="res://gdscript-demo/gdscript_demo.tscn"
 config/icon="res://icon.png"
 
 [input]
