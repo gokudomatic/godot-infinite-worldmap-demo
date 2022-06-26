@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://shader-demo/Map.gdshader" type="Shader" id=1]
+[ext_resource path="res://HelpPanel.tscn" type="PackedScene" id=2]
 
 [sub_resource type="GDScript" id=3]
 script/source = "extends Control
@@ -133,6 +134,12 @@ func update_noise(noiseObj:NoiseObject,noiseTex:NoiseTexture):
 	noiseObj.period=noiseObj.initial_period*zoom
 	noiseTex.noise.period=noiseObj.period
 
+func update_zoom_noise():
+	update_noise(elevationNoise,elevationTex)
+	update_noise(mainElevationNoise,mainElevationTex)
+	update_noise(moistureNoise,moistureTex)
+	update_noise(heatNoise,heatTex)
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	var speed=40*delta
@@ -167,18 +174,41 @@ func _process(delta):
 		elevationTex.noise.lacunarity=elevationNoise.lacunarity
 	if Input.is_action_pressed(\"periode_plus\"):
 		zoom+=0.01
-		update_noise(elevationNoise,elevationTex)
-		update_noise(mainElevationNoise,mainElevationTex)
-		update_noise(moistureNoise,moistureTex)
-		update_noise(heatNoise,heatTex)
+		update_zoom_noise()
 		update_position()
 	if Input.is_action_pressed(\"periode_minus\"):
 		zoom-=0.01
-		update_noise(elevationNoise,elevationTex)
-		update_noise(mainElevationNoise,mainElevationTex)
-		update_noise(moistureNoise,moistureTex)
-		update_noise(heatNoise,heatTex)
+		update_zoom_noise()
 		update_position()
+	
+	if Input.is_action_just_pressed(\"period_small\"):
+		zoom=0.1
+		elevationNoise.octaves=6
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_zoom_noise()
+		update_position()
+	if Input.is_action_just_pressed(\"period_normal\"):
+		zoom=1
+		elevationNoise.octaves=6
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_zoom_noise()
+		update_position()
+	if Input.is_action_just_pressed(\"period_large\"):
+		zoom=10
+		elevationNoise.octaves=9
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_zoom_noise()
+		update_position()
+	if Input.is_action_just_pressed(\"period_extralarge\"):
+		zoom=100
+		elevationNoise.octaves=9
+		elevationTex.noise.octaves=elevationNoise.octaves
+		update_zoom_noise()
+		update_position()
+	
+	
+	if Input.is_action_just_pressed(\"toggle_help\"):
+		$Help.visible=not $Help.visible
 "
 
 [sub_resource type="Gradient" id=4]
@@ -212,39 +242,51 @@ margin_right = -1.0
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_left = 8.0
 margin_right = 180.0
 
+[node name="HelpLabel" type="Label" parent="sidebar"]
+margin_right = 172.0
+margin_bottom = 31.0
+text = "Press H for Help
+"
+
 [node name="OctaveLabel" type="Label" parent="sidebar"]
-margin_right = 180.0
-margin_bottom = 14.0
+margin_top = 35.0
+margin_right = 172.0
+margin_bottom = 49.0
 text = "Octave : 4"
 
 [node name="ZoomLabel" type="Label" parent="sidebar"]
-margin_top = 18.0
-margin_right = 180.0
-margin_bottom = 32.0
+margin_top = 53.0
+margin_right = 172.0
+margin_bottom = 67.0
 text = "Zoom : 1"
 
 [node name="XLabel" type="Label" parent="sidebar"]
-margin_top = 36.0
-margin_right = 180.0
-margin_bottom = 50.0
+margin_top = 71.0
+margin_right = 172.0
+margin_bottom = 85.0
 text = "X : 0"
 
 [node name="YLabel" type="Label" parent="sidebar"]
-margin_top = 54.0
-margin_right = 180.0
-margin_bottom = 68.0
+margin_top = 89.0
+margin_right = 172.0
+margin_bottom = 103.0
 text = "Y : 0"
 
 [node name="WorldXLabel" type="Label" parent="sidebar"]
-margin_top = 72.0
-margin_right = 180.0
-margin_bottom = 86.0
+margin_top = 107.0
+margin_right = 172.0
+margin_bottom = 121.0
 text = "World X : 0"
 
 [node name="WorldYLabel" type="Label" parent="sidebar"]
-margin_top = 90.0
-margin_right = 180.0
-margin_bottom = 104.0
+margin_top = 125.0
+margin_right = 172.0
+margin_bottom = 139.0
 text = "World Y : 0"
+
+[node name="Help" parent="." instance=ExtResource( 2 )]
+visible = false
+modulate = Color( 1, 1, 1, 0.835294 )

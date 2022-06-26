@@ -20,7 +20,7 @@ _global_script_class_icons={
 
 [application]
 
-config/name="Texture Noise"
+config/name="Godot Infinite Worldmap Demo"
 run/main_scene="res://gdscript-demo/gdscript_demo.tscn"
 config/icon="res://icon.png"
 
@@ -102,6 +102,11 @@ period_large={
 period_extralarge={
 "deadzone": 0.5,
 "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777353,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+ ]
+}
+toggle_help={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":72,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
  ]
 }
 

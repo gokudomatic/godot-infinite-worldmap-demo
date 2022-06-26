@@ -1,0 +1,46 @@
+[gd_scene format=2]
+
+[node name="Control" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+
+[node name="Panel" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 50.0
+margin_top = 50.0
+margin_right = -50.0
+margin_bottom = -50.0
+bbcode_enabled = true
+bbcode_text = "[b]Procedural infinite world viewer[/b]
+
+[i]Commands[/i]
+WASD for panning the map
+
+Numpad 0 : zoom 0.1x
+Numpad 1 : zoom 1x
+Numpad 2 : zoom 10x
+Numpad 3 : zoom 100x
+Home/End : zoom in/out
+
+Insert/Delete : Octave +/-"
+text = "Procedural infinite world viewer
+
+Commands
+WASD for panning the map
+
+Numpad 0 : zoom 0.1x
+Numpad 1 : zoom 1x
+Numpad 2 : zoom 10x
+Numpad 3 : zoom 100x
+Home/End : zoom in/out
+
+Insert/Delete : Octave +/-"
