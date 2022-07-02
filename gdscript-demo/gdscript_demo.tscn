@@ -62,10 +62,14 @@ var resolutions=[16.0,12.0,8.0,6.0,4.0,2.0,1.0]
 
 var current_map_texture:ImageTexture
 
+var current_map_array
+
 var current_area_info:AreaInfoObject
 
 var worker_cancel_task:bool=false
 var thread:Thread
+
+var benchmark_timer=0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -208,41 +212,76 @@ func get_zoom():
 func get_noise_value(n:OpenSimplexNoise,x:int,y:int):
 	return (1.0+n.get_noise_2d(x, y))/2.0
 
+func get_elevation_image_line(is_cancellable,y,noise_y,line_size,camera_zoomed_size):
+	
+	var line_data:=[]
+	
+	for x in range(line_size):
+		if worker_cancel_task and is_cancellable:
+			return
+		
+		var noise_x=x+get_noise_offset().x
+		
+		var main_height :float= get_noise_value(mainElevationTex,noise_x,noise_y)
+		var height :float= get_noise_value(elevationTex,noise_x,noise_y)
+		var elevation:=( min(pow(height,2)+height,1) + 2.0 * main_height*main_height ) / 3.0
+		
+		var heat:float=get_noise_value(heatTex,noise_x,noise_y)
+		var moisture:float=get_noise_value(moistureTex,noise_x,noise_y)
+		
+		var biome_idx:float=biome_gen.get_biome(elevation,heat,moisture)
+		
+		var biome_color=getBiomeColor(biome_idx)
+		
+		line_data.push_back(biome_color[0])
+		line_data.push_back(biome_color[1])
+		line_data.push_back(biome_color[2])
+		
+		if(x==camera_zoomed_size.x/2 and y==camera_zoomed_size.y/2):
+			current_area_info=AreaInfoObject.new(biome_idx,heat,moisture,elevation,biome_color)
+	
+	current_map_array[y]=line_data
+
+func get_elevation_image_line1(params):
+	get_elevation_image_line(params[0],params[1],params[2],params[3],params[4])
+
 func get_elevation_image(is_cancellable:bool):
 	var out := ImageTexture.new()
 
 	var camera_zoomed_size=camera_size*resolutions[resolution_idx]
 
-	var data := []
+	current_map_array=[]
+	current_map_array.resize(camera_zoomed_size.y)
+
+	var max_thread_count=6
+	
+	var threads=[]
+
 	for y in range(camera_zoomed_size.y):
-		for x in range(camera_zoomed_size.x):
-			if worker_cancel_task and is_cancellable:
-				return
-			
-			var noise_x=x+get_noise_offset().x
-			var noise_y=y+get_noise_offset().y
-			
-			var main_height :float= get_noise_value(mainElevationTex,noise_x,noise_y)
-			var height :float= get_noise_value(elevationTex,noise_x,noise_y)
-			var elevation:=( min(pow(height,2)+height,1) + 2.0 * main_height*main_height ) / 3.0
-			
-			var heat:float=get_noise_value(heatTex,noise_x,noise_y)
-			var moisture:float=get_noise_value(moistureTex,noise_x,noise_y)
-			
-			var biome_idx:float=biome_gen.get_biome(elevation,heat,moisture)
-			
-			var biome_color=getBiomeColor(biome_idx)
-			
-			data.push_back(biome_color[0])
-			data.push_back(biome_color[1])
-			data.push_back(biome_color[2])
-			
-			if(x==camera_zoomed_size.x/2 and y==camera_zoomed_size.y/2):
-				current_area_info=AreaInfoObject.new(biome_idx,heat,moisture,elevation,biome_color)
+		if is_cancellable and worker_cancel_task:
+			return
+		
+		var noise_y=y+get_noise_offset().y
+		var t=Thread.new()
+		threads.append(t)
+		t.start(self,\"get_elevation_image_line1\",[is_cancellable,y,noise_y,camera_zoomed_size.x,camera_zoomed_size])
+#		get_elevation_image_line(is_cancellable,y,noise_y,camera_zoomed_size.x,camera_zoomed_size)
+		
+		if threads.size()>=max_thread_count:
+			for thread in threads:
+				thread.wait_to_finish()
+			threads=[]
+	
+	if threads.size()>0:
+		for t in threads:
+			t.wait_to_finish()
+		threads=[]
 	
 	var bytes = StreamPeerBuffer.new()
-	for d in data:
-		bytes.put_float(d)
+	
+	for y in range(camera_zoomed_size.y):
+		for d in current_map_array[y]:
+			bytes.put_float(d)
 	
 	var image := Image.new()
 	image.create_from_data(camera_zoomed_size.x, camera_zoomed_size.y, false, Image.FORMAT_RGBF, bytes.data_array)
@@ -390,13 +429,14 @@ func progressive_run():
 	if mode==3:
 		update_zoom_noise()
 		var tex=get_elevation_image(true)
-		print(\"got image\")
 		if not worker_cancel_task:
-			print(\"call deferred\")
 			self.call_deferred(\"refresh_image\",tex)
+			if resolution_idx==0:
+				print(\"total time : \"+str(OS.get_ticks_msec()-benchmark_timer)+\"ms\")
 	
 
 func update_position():
+	benchmark_timer=OS.get_ticks_msec()
 	mode=1
 	initial_run()
 	update_labels()
@@ -443,91 +483,90 @@ shader = ExtResource( 1 )
 [node name="Main" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = -181.0
 script = SubResource( 6 )
 
 [node name="ColorRect" type="ColorRect" parent="."]
 material = SubResource( 2 )
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = -1.0
+margin_right = -162.0
 
 [node name="sidebar" type="VBoxContainer" parent="."]
-anchor_left = 0.89
+anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 96.73
-margin_right = 180.0
+margin_left = -150.0
+margin_top = 14.0
 
 [node name="HelpLabel" type="Label" parent="sidebar"]
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 31.0
 text = "Press H for help
 "
 
 [node name="OctaveLabel" type="Label" parent="sidebar"]
 margin_top = 35.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 49.0
 text = "Octave : 4"
 
 [node name="ZoomLabel" type="Label" parent="sidebar"]
 margin_top = 53.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 67.0
 text = "Zoom : 1"
 
 [node name="XLabel" type="Label" parent="sidebar"]
 margin_top = 71.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 85.0
 text = "X : 0"
 
 [node name="YLabel" type="Label" parent="sidebar"]
 margin_top = 89.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 103.0
 text = "Y : 0"
 
 [node name="WorldXLabel" type="Label" parent="sidebar"]
 margin_top = 107.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 121.0
 text = "World X : 0"
 
 [node name="WorldYLabel" type="Label" parent="sidebar"]
 margin_top = 125.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 139.0
 text = "World Y : 0"
 
 [node name="AltitudeLabel" type="Label" parent="sidebar"]
 margin_top = 143.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 157.0
 text = "Altitude : 0"
 
 [node name="HeatLabel" type="Label" parent="sidebar"]
 margin_top = 161.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 175.0
 text = "Temperature : 0"
 
 [node name="MoistureLabel" type="Label" parent="sidebar"]
 margin_top = 179.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 193.0
 text = "Humidity : 0"
 
 [node name="BiomeLabel" type="Label" parent="sidebar"]
 margin_top = 197.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 211.0
 text = "Biome :"
 
 [node name="PictureBiome" type="ColorRect" parent="sidebar"]
 margin_top = 215.0
-margin_right = 176.0
+margin_right = 150.0
 margin_bottom = 215.0
 
 [node name="Help" parent="." instance=ExtResource( 2 )]
