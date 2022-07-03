@@ -78,15 +78,13 @@ func _ready():
 
 func init_all_textures():
 	
-#	self.moistureNoise=NoiseObject.new(1,6,64,0.5,2.8)
-	self.moistureNoise=NoiseObject.new(1,4,64,3,0.4)
+	self.moistureNoise=NoiseObject.new(1,4,8,3,0.4)
 	self.moistureTex=init_texture(self.moistureNoise)
 	
-#	self.heatNoise=NoiseObject.new(2,6,64,0.5,2.8)
-	self.heatNoise=NoiseObject.new(2,4,64,3,0.4)
+	self.heatNoise=NoiseObject.new(2,4,8,3,0.4)
 	self.heatTex=init_texture(self.heatNoise)
 	
-	self.mainElevationNoise=NoiseObject.new(0,1,360,1,1)
+	self.mainElevationNoise=NoiseObject.new(0,9,360,1,1)
 	self.mainElevationTex=init_texture(self.mainElevationNoise)
 	
 	self.elevationNoise=NoiseObject.new(0,6,60,0.5,3.1)

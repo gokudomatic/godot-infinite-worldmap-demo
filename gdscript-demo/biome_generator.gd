@@ -35,7 +35,7 @@ const altShallowWater=0.48;
 const altSand=0.5;
 const altGrass=0.63;
 const altForest=0.75;
-const altRock=0.8;
+const altRock=0.88;
 const altSnow=1;
 
 func get_biome(height:float,heat:float,moisture:float):
