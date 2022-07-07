@@ -6,7 +6,9 @@
 [sub_resource type="GDScript" id=6]
 script/source = "extends Control
 
-var help=preload(\"res://HelpPanel.tscn\")
+onready var config:Config=get_node(\"/root/Config\")
+
+var Settings=preload(\"res://Settings.tscn\")
 
 class NoiseObject:
 	var seed_nr:int
@@ -70,6 +72,11 @@ var worker_cancel_task:bool=false
 var thread:Thread
 
 var benchmark_timer=0
+
+var current_seed:int=0
+
+var paused:bool=false
+var settings_panel=null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -305,6 +312,9 @@ func update_zoom_noise():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	if paused:
+		return
+	
 	var image_updated=false
 	var speed=20*delta
 	
@@ -388,6 +398,14 @@ func _process(delta):
 	if Input.is_action_just_pressed(\"toggle_help\"):
 		$Help.visible=not $Help.visible
 	
+	if Input.is_action_just_pressed(\"toggle_settings\"):
+		paused=true
+		config.current_coord=world_offset
+		settings_panel=Settings.instance()
+		add_child(settings_panel)
+		settings_panel.connect(\"applied\", self, \"on_settings_applied\")
+		settings_panel.connect(\"cancelled\", self, \"on_settings_cancelled\")
+	
 	if not image_updated and mode==1:
 		mode=2
 		active_timeout=0.2
@@ -408,7 +426,9 @@ func start_thread():
 func cancel_thread():
 	if thread!=null and thread.is_alive():
 		worker_cancel_task=true
+		print(\"wait_to_finish\")
 		thread.wait_to_finish()
+		print(\"done\")
 #		thread=null
 
 func initial_run():
@@ -446,7 +466,7 @@ func refresh_image(new_texture:ImageTexture):
 
 func get_current_temperature():
 	if current_area_info!=null:
-		return round(((current_area_info.heat-0.5)*80+10)*10)/10.0
+		return round(((current_area_info.heat-0.5)*100+10)*10)/10.0
 	else:
 		return 0.0
 
@@ -470,6 +490,32 @@ func get_current_biome():
 	else:
 		return \"-- Null --\"
 
+func set_seed(seed_nr):
+	current_seed=seed_nr
+	elevationNoise.seed_nr=current_seed
+	elevationTex.seed=elevationNoise.seed_nr
+	mainElevationNoise.seed_nr=current_seed
+	mainElevationTex.seed=mainElevationNoise.seed_nr
+	moistureNoise.seed_nr=current_seed+1
+	moistureTex.seed=moistureNoise.seed_nr
+	heatNoise.seed_nr=current_seed+2
+	heatTex.seed=heatNoise.seed_nr
+	
+
+func on_settings_applied():
+	paused=false
+	if settings_panel!=null:
+		remove_child(settings_panel)
+		settings_panel=null
+	set_seed(config.current_seed)
+	world_offset=config.current_coord
+	update_position()
+
+func on_settings_cancelled():
+	paused=false
+	if settings_panel!=null:
+		remove_child(settings_panel)
+		settings_panel=null
 
 func _exit_tree():
 	cancel_thread()

@@ -5,8 +5,8 @@ class_name BiomeGenerator
 const COLDEST = 0.05;
 const COLDER = 0.18;
 const COLD = 0.4;
-const WARM = 0.6;
-const WARMER = 0.8;
+const WARM = 0.5;
+const WARMER = 0.7;
 
 const DRYEST = 0.27;
 const DRYER = 0.4;
@@ -30,7 +30,7 @@ const cTundra=0.65;
 const cSnow=0.7;
 
 
-const altDeepWater=0.4;
+const altDeepWater=0.45;
 const altShallowWater=0.48;
 const altSand=0.5;
 const altGrass=0.63;
@@ -41,7 +41,7 @@ const altSnow=1;
 func get_biome(height:float,heat:float,moisture:float):
 	var result=height
 	if(height<altSand):
-		return getWaterBiotop(height);
+		return getWaterBiotop(height,moisture,heat);
 	elif(height<altForest):
 		return getMainlandBiotop(moisture,heat);
 	elif(height<altRock):
@@ -82,15 +82,28 @@ func getMainlandBiotop(moisture:float, heat:float):
 		return cTundra;
 	elif(heat<COLD):
 		return getColdBiotop(moisture);
-	elif(heat<WARM):
+	elif(heat<WARMER):
 		return getWarmBiotop(moisture);
 	else:
 		return getHotBiotop(moisture);
 
-func getWaterBiotop(height:float):
+func getBeachBiotop(moisture:float, heat:float):
+	if heat<COLDER:
+		return cTundra
+	elif heat<WARMER:
+		return cGrass;
+	else:
+		if(moisture<DRYER):
+			return cDesert;
+		elif(moisture<WET):
+			return cSavanna;
+		else:
+			return cGrass
+
+func getWaterBiotop(height:float,moisture:float, heat:float):
 	if(height<altDeepWater):
 		return cDeepWater;
 	elif(height<altShallowWater):
 		return cShallowWater;
 	else:
-		return cShallowWater;
+		return getBeachBiotop(moisture,heat);
