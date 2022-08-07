@@ -1,0 +1,103 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://HelpPanel.tscn" type="PackedScene" id=1]
+[ext_resource path="res://gdscript-demo/viewer.gdshader" type="Shader" id=2]
+[ext_resource path="res://mono-demo/mono_demo.cs" type="Script" id=3]
+[ext_resource path="res://mono-demo/MapComponent.cs" type="Script" id=4]
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = ExtResource( 2 )
+
+[node name="Main" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 3 )
+
+[node name="MapComponent" type="ColorRect" parent="."]
+material = SubResource( 2 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -162.0
+script = ExtResource( 4 )
+
+[node name="sidebar" type="VBoxContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -150.0
+margin_top = 14.0
+
+[node name="HelpLabel" type="Label" parent="sidebar"]
+margin_right = 150.0
+margin_bottom = 31.0
+text = "Press H for help
+"
+
+[node name="OctaveLabel" type="Label" parent="sidebar"]
+margin_top = 35.0
+margin_right = 150.0
+margin_bottom = 49.0
+text = "Octave : 4"
+
+[node name="ZoomLabel" type="Label" parent="sidebar"]
+margin_top = 53.0
+margin_right = 150.0
+margin_bottom = 67.0
+text = "Zoom : 1"
+
+[node name="XLabel" type="Label" parent="sidebar"]
+margin_top = 71.0
+margin_right = 150.0
+margin_bottom = 85.0
+text = "X : 0"
+
+[node name="YLabel" type="Label" parent="sidebar"]
+margin_top = 89.0
+margin_right = 150.0
+margin_bottom = 103.0
+text = "Y : 0"
+
+[node name="WorldXLabel" type="Label" parent="sidebar"]
+margin_top = 107.0
+margin_right = 150.0
+margin_bottom = 121.0
+text = "World X : 0"
+
+[node name="WorldYLabel" type="Label" parent="sidebar"]
+margin_top = 125.0
+margin_right = 150.0
+margin_bottom = 139.0
+text = "World Y : 0"
+
+[node name="AltitudeLabel" type="Label" parent="sidebar"]
+margin_top = 143.0
+margin_right = 150.0
+margin_bottom = 157.0
+text = "Altitude : 0"
+
+[node name="HeatLabel" type="Label" parent="sidebar"]
+margin_top = 161.0
+margin_right = 150.0
+margin_bottom = 175.0
+text = "Temperature : 0"
+
+[node name="MoistureLabel" type="Label" parent="sidebar"]
+margin_top = 179.0
+margin_right = 150.0
+margin_bottom = 193.0
+text = "Humidity : 0"
+
+[node name="BiomeLabel" type="Label" parent="sidebar"]
+margin_top = 197.0
+margin_right = 150.0
+margin_bottom = 211.0
+text = "Biome :"
+
+[node name="PictureBiome" type="ColorRect" parent="sidebar"]
+margin_top = 215.0
+margin_right = 150.0
+margin_bottom = 215.0
+
+[node name="Help" parent="." instance=ExtResource( 1 )]
+visible = false
+modulate = Color( 1, 1, 1, 0.784314 )

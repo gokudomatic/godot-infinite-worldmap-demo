@@ -21,7 +21,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Godot Infinite Worldmap Demo"
-run/main_scene="res://gdscript-demo/gdscript_demo.tscn"
+run/main_scene="res://mono-demo/mono_demo.tscn"
 config/icon="res://icon.png"
 
 [autoload]
