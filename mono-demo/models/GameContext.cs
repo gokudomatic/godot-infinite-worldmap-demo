@@ -14,7 +14,7 @@ namespace godot_infinite_worldmap_demo.mono_demo.models
 
         public NoiseWorld noises=new NoiseWorld();
 
-        public List<List<float>> currentMapArray;
+        public List<float>[] currentMapArray;
 
 
         public int[] getNoiseOffset(){

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Godot;
 using godot_infinite_worldmap_demo.mono_demo.models;
 using System.Collections.Generic;
@@ -12,12 +13,11 @@ namespace godot_infinite_worldmap_demo.mono_demo.services
           int zoomFactor=context.resolutions[context.resolutionIdx];
             int[] camera_zoomed_size=new int[]{context.cameraSize[0]*zoomFactor,context.cameraSize[1]*zoomFactor};
 
-            context.currentMapArray=new List<List<float>>(camera_zoomed_size[1]);
-            for (int i=0;i<camera_zoomed_size[1];i++) { context.currentMapArray.Add(null); }
+            context.currentMapArray=new List<float>[camera_zoomed_size[1]];
 
             int max_thread_count=6;
             
-            List<System.Threading.Thread> workerThreads = new List<System.Threading.Thread>();
+            Task[] workerThreads = new Task[camera_zoomed_size[1]];
 
             for (int i = 0; i < camera_zoomed_size[1]; i++){
               if (isCancellable && context.cancelThread) {
@@ -26,23 +26,15 @@ namespace godot_infinite_worldmap_demo.mono_demo.services
               
               int noise_y=i+context.getNoiseOffset()[1];
               
-              get_elevation_image_line(context, isCancellable,i,noise_y,camera_zoomed_size[0],camera_zoomed_size);
+              // get_elevation_image_line(context, isCancellable,i,noise_y,camera_zoomed_size[0],camera_zoomed_size);
 
-              // System.Threading.Thread t = new System.Threading.Thread(() => get_elevation_image_line(context, isCancellable,i,noise_y,camera_zoomed_size[0],camera_zoomed_size));
+              int y=i;
 
-              // workerThreads.Add(t);
-              // t.Start();
-              
-              // if (workerThreads.Count>=max_thread_count){
-              //   foreach (System.Threading.Thread d in workerThreads) d.Join();
-              //   workerThreads = new List<System.Threading.Thread>();
-              // }
+              workerThreads[i] = Task.Factory.StartNew(() => get_elevation_image_line(context, isCancellable,y,noise_y,camera_zoomed_size[0],camera_zoomed_size));
+    
             }
             
-            // if (workerThreads.Count>0){
-            //   foreach (System.Threading.Thread d in workerThreads) d.Join();
-            // }
-            
+            Task.WaitAll(workerThreads);
             StreamPeerBuffer bytes = new StreamPeerBuffer();
             
             foreach (List<float> line in context.currentMapArray){
@@ -92,7 +84,7 @@ namespace godot_infinite_worldmap_demo.mono_demo.services
           }
 
           context.currentMapArray[y]=lineData;
-        }
+       }
 
         private float getNoiseValue(INoiseGenerator n,int x,int y){
           return (1.0F+n.getNoiseAt(x, y))/2.0F;
