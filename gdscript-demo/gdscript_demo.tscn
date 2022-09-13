@@ -255,6 +255,8 @@ func get_elevation_image(is_cancellable:bool):
 
 	var camera_zoomed_size=camera_size*resolutions[resolution_idx]
 
+	print(camera_zoomed_size)
+
 	current_map_array=[]
 	current_map_array.resize(camera_zoomed_size.y)
 

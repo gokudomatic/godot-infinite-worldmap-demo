@@ -21,5 +21,13 @@ namespace godot_infinite_worldmap_demo.mono_demo.models
           this.noise[name]=value;
         }
       }
+
+      public float zoom {get {
+        return noise[ELEVATION_NOISE].zoom;
+      } set {
+        foreach (INoiseGenerator n in noise.Values){
+          n.zoom=value;
+        }
+      }}
     }
 }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Godot;
 using godot_infinite_worldmap_demo.mono_demo.models;
 using System.Collections.Generic;
+using godot_infinite_worldmap_demo.mono_demo.services.generators;
 
 namespace godot_infinite_worldmap_demo.mono_demo.services
 {
@@ -10,8 +11,15 @@ namespace godot_infinite_worldmap_demo.mono_demo.services
     {   
         
         public ImageTexture generateImage(GameContext context, bool isCancellable) {
-          int zoomFactor=context.resolutions[context.resolutionIdx];
+            System.Console.WriteLine("generate image");
+            context.resolutionIdx=6;
+
+            int zoomFactor=context.resolutions[context.resolutionIdx];
             int[] camera_zoomed_size=new int[]{context.cameraSize[0]*zoomFactor,context.cameraSize[1]*zoomFactor};
+
+            GodotNoiseGenerator n=(GodotNoiseGenerator) context.noises.getNoise(NoiseWorld.ELEVATION_NOISE);
+
+            System.Console.WriteLine("elevation periode "+n.period);
 
             context.currentMapArray=new List<float>[camera_zoomed_size[1]];
 

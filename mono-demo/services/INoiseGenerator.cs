@@ -5,5 +5,7 @@ namespace godot_infinite_worldmap_demo.mono_demo.services
       float getNoiseAt(int x,int y);
 
       int seed { get;set; }
+
+      float zoom { get;set; }
     }
 }
